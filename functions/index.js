@@ -59,7 +59,7 @@ exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
 exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
   var db = admin.firestore();
   const startDate = new Date(req.query.startDate);
-  const endDate = new Date(req.query.endDate)
+  const endDate = new Date(req.query.endDate);
   var stats = [];
   db.collection("allStats")
     .where('createdAt', '>', startDate)
@@ -81,4 +81,32 @@ exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
     }).catch(reason => {
       res.send(reason)
     })
+});
+
+
+exports.deleteStatByID = functions.https.onRequest((req, res) => {
+  const statID = req.query.statID;
+
+  firebase.db.collection('stats')
+    .where('statID', '==', statID)
+    .get().then(function (querySnapshot) {
+      querySnapshot.forEach(function (doc) {
+        doc.ref.delete();
+      });
+    });
+});
+
+
+exports.deleteStatInTimePeriod = functions.https.onRequest((req, res) => {
+  const startDate = new Date(req.query.startDate);
+  const endDate = new Date(req.query.endDate);
+
+  firebase.db.collection('stats')
+    .where('createdAt', '>', startDate)
+    .where('createdAt', '<', endDate)
+    .get().then(function (querySnapshot) {
+      querySnapshot.forEach(function (doc) {
+        doc.ref.delete();
+      });
+    });
 });
