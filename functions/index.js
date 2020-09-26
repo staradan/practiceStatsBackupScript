@@ -36,7 +36,7 @@ exports.scheduledFirestoreExport = functions.pubsub
 exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
   var stats = [];
   var db = admin.firestore();
-  db.collection("stats").where("playerName", "==", req.query.playerName).get().then(snapshot => {
+  db.collection("allStats").where("playerName", "==", req.query.playerName).get().then(snapshot => {
     snapshot.forEach(doc => {
       var newelement = {
         "id": doc.id,
@@ -56,7 +56,7 @@ exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
 });
 
 
-exports.getAllStats = functions.https.onRequest((req, res) => {
+exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
   var db = admin.firestore();
   const startDate = new Date(req.query.startDate);
   const endDate = new Date(req.query.endDate)
