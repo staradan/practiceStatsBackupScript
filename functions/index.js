@@ -4,7 +4,6 @@ const client = new firestore.v1.FirestoreAdminClient();
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-// Replace BUCKET_NAME
 const bucket = 'gs://practicestatsbackup';
 
 exports.scheduledFirestoreExport = functions.pubsub
@@ -62,7 +61,7 @@ exports.getAllStats = functions.https.onRequest((req, res) => {
   const startDate = new Date(req.query.startDate);
   const endDate = new Date(req.query.endDate)
   var stats = [];
-  db.collection("stats")
+  db.collection("allStats")
     .where('createdAt', '>', startDate)
     .where('createdAt', '<', endDate)
     .get().then(snapshot => {
