@@ -3,6 +3,7 @@ const firestore = require('@google-cloud/firestore');
 const client = new firestore.v1.FirestoreAdminClient();
 const admin = require('firebase-admin');
 admin.initializeApp();
+const db = admin.firestore();
 
 const bucket = 'gs://practicestatsbackup';
 
@@ -35,7 +36,6 @@ exports.scheduledFirestoreExport = functions.pubsub
 
 exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
   var stats = [];
-  var db = admin.firestore();
   db.collection("allStats").where("playerName", "==", req.query.playerName).get().then(snapshot => {
     snapshot.forEach(doc => {
       var newelement = {
@@ -57,7 +57,6 @@ exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
 
 
 exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
-  var db = admin.firestore();
   const startDate = new Date(req.query.startDate);
   const endDate = new Date(req.query.endDate);
   var stats = [];
@@ -85,28 +84,39 @@ exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
 
 
 exports.deleteStatByID = functions.https.onRequest((req, res) => {
-  const statID = req.query.statID;
+  const ID = req.query.statID;
+  console.log('wubba lubba dub dub', parseFloat(605.578884363013));
 
-  firebase.db.collection('stats')
-    .where('statID', '==', statID)
-    .get().then(function (querySnapshot) {
-      querySnapshot.forEach(function (doc) {
+  db.collection("stats")
+    .where("statID", "==", parseFloat(ID))
+    .get().then(snapshot => {
+      console.log('poop');
+      snapshot.forEach(doc => {
         doc.ref.delete();
+        res.send('deleted!');
       });
+      res.send('poop');
+      return "";
+    }).catch(reason => {
+      res.send(reason)
     });
 });
 
 
-exports.deleteStatInTimePeriod = functions.https.onRequest((req, res) => {
+exports.deleteStatsInPeriod = functions.https.onRequest((req, res) => {
   const startDate = new Date(req.query.startDate);
   const endDate = new Date(req.query.endDate);
 
-  firebase.db.collection('stats')
+  db.collection('stats')
     .where('createdAt', '>', startDate)
     .where('createdAt', '<', endDate)
-    .get().then(function (querySnapshot) {
-      querySnapshot.forEach(function (doc) {
+    .get().then(snapshot => {
+      snapshot.forEach(doc => {
         doc.ref.delete();
       });
+      res.send('deleted');
+      return "";
+    }).catch(reason => {
+      res.send(reason)
     });
 });
