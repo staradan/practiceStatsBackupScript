@@ -378,7 +378,133 @@ exports.callAllStatsForPlayer = functions.https.onCall((data, context) => {
 
 });
 
+//make an onrequest so we can test this baby out!
 
+
+exports.newGetStatsInPeriod = functions.https.onCall(async (data, context) => {
+  const startDate = new Date(data.startDate);
+  const endDate = new Date(data.endDate);
+  let names = [];
+  catObj = {};
+  let stats = {
+    Overall: {
+      positive: [],
+      negative: [],
+      allStats: [],
+      adjustedNegative: [],
+      successPercent: -1,
+    } //negative stats that do not count against the player/team in efficiency calculations
+  };
+
+  try {
+    let namesQuery = await db.collection('names').get();
+    let statsQuery = await db.collection('allStats').where('createdAt', '>', startDate).where('createdAt', '<', endDate).get();
+
+    await namesQuery.forEach((doc) => {
+      names.push(doc.data().names);
+    });
+
+    await names[0].map((playerName, index) => {
+      stats[playerName] = {
+        positive: [],
+        negative: [],
+        allStats: [],
+        adjustedNegative: [],
+        successPercent: -1,
+      };
+    });
+
+    await statsQuery.forEach((doc) => {
+      let x = doc.data();
+      stats[x.playerName].allStats.push(x);
+      stats.Overall.allStats.push(x);
+      if (x.isPositive) {
+        stats.Overall.positive.push(x);
+        stats[x.playerName].positive.push(x);
+      } else {
+        stats.Overall.negative.push(x);
+        stats[x.playerName].negative.push(x);
+        if (x.statName !== 'Competitive' && x.statName !== 'Diving') {
+          stats.Overall.adjustedNegative.push(x);
+          stats[x.playerName].adjustedNegative.push(x);
+        }
+      }
+    });
+
+    for (const property in stats) {
+      stats[property].successPercent =
+        (stats[property].positive.length / (stats[property].positive.length + stats[property].adjustedNegative.length)).toFixed(2);
+    }
+
+    // res.send({ data: stats });
+    return stats;
+  } catch (err) {
+    // console.error("Error adding document: ", err);
+    // res.status(500).send(err.message);
+    return err;
+  }
+});
+
+
+exports.dudeGetStatsInPeriod = functions.https.onRequest(async (req, res) => {
+  const startDate = new Date(req.body.data.startDate);
+  const endDate = new Date(req.body.data.endDate);
+  let names = [];
+  catObj = {};
+  let stats = {
+    allPositive: [],
+    allNegative: [],
+    adjustedNegative: [], //negative stats that do not count against the player/team in efficiency calculations
+  };
+
+  try {
+    let namesQuery = await db.collection('names').get();
+    let statsQuery = await db.collection('allStats').where('createdAt', '>', startDate).where('createdAt', '<', endDate).get();
+
+    await namesQuery.forEach((doc) => {
+      names.push(doc.data().names);
+    });
+
+    await names[0].map((playerName, index) => {
+      stats[playerName] = {
+        positive: [],
+        negative: [],
+        allStats: [],
+        adjustedNegative: [],
+        successPercent: -1,
+      };
+    });
+
+    await statsQuery.forEach((doc) => {
+      let x = doc.data();
+      stats[x.playerName].allStats.push(x);
+      if (x.isPositive) {
+        stats.allPositive.push(x);
+        stats[x.playerName].positive.push(x);
+      } else {
+        stats.allNegative.push(x);
+        stats[x.playerName].negative.push(x);
+        if (x.statName !== 'Competitive' && x.statName !== 'Diving') {
+          stats.adjustedNegative.push(x);
+          stats[x.playerName].adjustedNegative.push(x);
+        }
+      }
+    });
+
+    for (const property in stats) {
+      if (property.toString() !== 'allNegative' && property.toString() !== 'allPositive' && property.toString() !== 'adjustedNegative') {
+        stats[property].successPercent =
+          (stats[property].positive.length / (stats[property].positive.length + stats[property].adjustedNegative.length)).toFixed(2);
+      }
+    }
+    res.send({ data: stats });
+    return;
+  } catch (err) {
+    console.error("Error adding document: ", err);
+    res.status(500).send(err.message);
+    return;
+  }
+});
 
 
 exports.callStatsInPeriod = functions.https.onCall((data, context) => {
