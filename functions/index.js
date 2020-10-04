@@ -40,131 +40,7 @@ exports.scheduledFirestoreExport = functions.pubsub
       });
   });
 
-/**
- * Delete stat with ID
- */
-exports.deleteStatByID = functions.https.onRequest((req, res) => {
-  const ID = req.query.statID;
-  console.log('wubba lubba dub dub', parseFloat(605.578884363013));
 
-  db.collection("allStats")
-    .where("statID", "==", parseFloat(ID))
-    .get().then(snapshot => {
-      console.log('poop');
-      snapshot.forEach(doc => {
-        doc.ref.delete();
-      });
-      res.send('deleted!');
-      return "";
-    }).catch(reason => {
-      res.send(reason)
-    });
-});
-
-/**
- * Delete Stats Within Time Period
- */
-exports.deleteStatsInPeriod = functions.https.onRequest((req, res) => {
-  const startDate = new Date(req.query.startDate);
-  const endDate = new Date(req.query.endDate);
-
-  db.collection("allStats")
-    .where('createdAt', '>', startDate)
-    .where('createdAt', '<', endDate)
-    .get().then(snapshot => {
-      snapshot.forEach(doc => {
-        doc.ref.delete();
-      });
-      res.send('deleted');
-      return "";
-    }).catch(reason => {
-      res.send(reason)
-    });
-});
-
-
-/**
- * Get all of the stats for a player
- */
-exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
-  var stats = [];
-  db.collection("allStats").where("playerName", "==", req.query.playerName).get().then(snapshot => {
-    snapshot.forEach(doc => {
-      var newelement = {
-        "id": doc.id,
-        "createdAt": doc.data().createdAt,
-        "isPositive": doc.data().isPositive,
-        "playerName": doc.data().playerName,
-        "statID": doc.data().statID,
-        "statName": doc.data().statName,
-      }
-      stats = stats.concat(newelement);
-    });
-    res.send(stats)
-    return "";
-  }).catch(reason => {
-    res.send(reason)
-  })
-});
-
-
-/**
- * Team stats in time period
- */
-exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
-  const startDate = new Date(req.query.startDate);
-  const endDate = new Date(req.query.endDate);
-  var stats = [];
-  db.collection("allStats")
-    .where('createdAt', '>', startDate)
-    .where('createdAt', '<', endDate)
-    .get().then(snapshot => {
-      snapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": doc.data().playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        stats = stats.concat(newelement);
-      });
-      res.send(stats)
-      return "";
-    }).catch(reason => {
-      res.send(reason)
-    })
-});
-
-/**
- * Team Stats for Day
- */
-exports.getStatsInDay = functions.https.onRequest((req, res) => {
-  const startDate = firebase.getTimeStamp(new Date(req.query.day));
-  const endDate = firebase.getTimeStamp(new Date(startDate.getTime() + (24 * 60 * 60 * 1000)));
-  var stats = [];
-  db.collection("allStats")
-    .where(`created.${seconds}`, '>', startDate.seconds)
-    .where(`createdAt.${seconds}`, '<', endDate.seconds)
-    .get().then(snapshot => {
-      snapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": doc.data().playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        stats = stats.concat(newelement);
-      });
-      res.send(stats)
-      return "";
-    }).catch(reason => {
-      res.send(reason)
-    })
-});
 
 exports.callAllPlayers = functions.https.onCall((data, context) => {
   var players = [];
@@ -199,186 +75,6 @@ goal = {
     negativeStats: [],
   }
 }
-
-
-
-// exports.callBetterStatsInPeriod = functions.https.onCall((data, context) => {
-//   const startDate = new Date(data.startDate);
-//   const endDate = new Date(data.endDate);
-//   //example has fields for types, and names
-//   let categorizedStats = {};
-
-//   return db.collection('allStats')
-//     .where('createdAt', '>', startDate)
-//     .where('createdAt', '<', endDate)
-//     .get()
-//     .then(function (querySnapshot) {
-//       querySnapshot.forEach(doc => {
-//         var newelement = {
-//           "id": doc.id,
-//           "createdAt": doc.data().createdAt,
-//           "isPositive": doc.data().isPositive,
-//           "playerName": doc.data().playerName,
-//           "statID": doc.data().statID,
-//           "statName": doc.data().statName,
-//         }
-
-//         if (doc.data().isPositive) { //stat is positive
-//           //add it to the postive part
-//           return ['poop!'];
-//           // categorizedStats.allStats.isPositive = [];
-//           // categorizedStats.allStats.isPositive.push(newelement);
-//           // //add it to the player
-//           // categorizedStats[doc.data().playerName].isPositive = [];
-//           // categorizedStats[doc.data().playerName].isPositive.push(newelement);
-//           // //add it to the category
-//           // categorizedStats[doc.data().statName].isPositive = [];
-//           // categorizedStats[doc.data().statName].isPositive.push(newelement);
-//         } else { //stat is negative
-//           return ['false!'];
-//           //add it to the postive part
-//           // categorizedStats.allStats.isNegative = [];
-//           // categorizedStats.allStats.isNegative.push(newelement);
-//           // //add it to the player
-//           // categorizedStats[doc.data().playerName].isNegative = [];
-//           // categorizedStats[doc.data().playerName].isNegative.push(newelement);
-//           // //add it to the category
-//           // categorizedStats[doc.data().statName].isNegative = [];
-//           // categorizedStats[doc.data().statName].isNegative.push(newelement);
-//         }
-//       });
-//       return categorizedStats;
-//     })
-//     .catch(function (error) {
-//       console.error("Error adding document: ", error);
-//     })
-
-// });
-
-exports.callBetterStatsInPeriod = functions.https.onCall((data, context) => {
-  var stats = {
-    allPositiveStats: [],
-    allNegativeStats: [],
-  };
-  const startDate = new Date(data.startDate);
-  const endDate = new Date(data.endDate);
-
-  result = {
-    allPositiveStats: [],
-    allNegativeStats: [],
-    playerOne: {
-      name: '',
-      positives: [],
-      negatives: []
-    },
-    playerTwo: {
-      name: '',
-      positives: [],
-      negatives: []
-    }
-  }
-
-  return db.collection('allStats')
-    .where('createdAt', '>', startDate)
-    .where('createdAt', '<', endDate)
-    .get()
-    .then(function (querySnapshot) {
-      let playerName = doc.data().playerName;
-      let playerID = doc.data().playerName;
-      querySnapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        if (doc.data().isPositive) {
-          stats.allPositiveStats.push(newelement);
-
-          if (stats.hasOwnProperty(playerID)) {
-            stats[`${playerID}`].positiveStats.push(newelement);
-          } else { // if it doesn't exist
-            stats[`${playerID}`] = {
-              name: playerName,
-              positiveStats: [newelement],
-              negativeStats: [],
-            }
-          }
-        } else {
-          stats.allNegativeStats.push(newelement);
-
-          if (stats.hasOwnProperty(playerID)) {
-            stats[`${playerID}`].negativeStats.push(newelement);
-          } else { // if it doesn't exist
-            stats[`${playerID}`] = {
-              name: playerName,
-              positiveStats: [],
-              negativeStats: [newelement],
-            }
-          }
-        }
-
-        // if (doc.data().isPositive) { //stat is positive
-        //   //add it to the postive part
-        //   return ['poop!'];
-        //   // categorizedStats.allStats.isPositive = [];
-        //   // categorizedStats.allStats.isPositive.push(newelement);
-        //   // //add it to the player
-        //   // categorizedStats[doc.data().playerName].isPositive = [];
-        //   // categorizedStats[doc.data().playerName].isPositive.push(newelement);
-        //   // //add it to the category
-        //   // categorizedStats[doc.data().statName].isPositive = [];
-        //   // categorizedStats[doc.data().statName].isPositive.push(newelement);
-        // } else { //stat is negative
-        //   return ['false!'];
-        //   //add it to the postive part
-        //   // categorizedStats.allStats.isNegative = [];
-        //   // categorizedStats.allStats.isNegative.push(newelement);
-        //   // //add it to the player
-        //   // categorizedStats[doc.data().playerName].isNegative = [];
-        //   // categorizedStats[doc.data().playerName].isNegative.push(newelement);
-        //   // //add it to the category
-        //   // categorizedStats[doc.data().statName].isNegative = [];
-        //   // categorizedStats[doc.data().statName].isNegative.push(newelement);
-        // }
-
-        //stats = stats.concat(newelement);
-      });
-      return stats;
-    })
-    .catch(function (error) {
-      console.error("Error adding document: ", error);
-    });
-});
-
-exports.callAllStatsForPlayer = functions.https.onCall((data, context) => {
-  var stats = [];
-  const playerName = data.playerName;
-  //example has fields for types, and names
-  return db.collection('allStats').where('playerName', '==', playerName).get()
-    .then(function (querySnapshot) {
-      querySnapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": doc.data().playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        stats = stats.concat(newelement);
-      });
-      return stats;
-    })
-    .catch(function (error) {
-      console.error("Error adding document: ", error);
-    })
-
-});
-
-//make an onrequest so we can test this baby out!
 
 
 exports.newGetStatsInPeriod = functions.https.onCall(async (data, context) => {
@@ -446,6 +142,10 @@ exports.newGetStatsInPeriod = functions.https.onCall(async (data, context) => {
 });
 
 
+/**
+ * Keeping this because it is a good way to test the above function, newGetStatsInPeriod
+ * 
+ */
 exports.dudeGetStatsInPeriod = functions.https.onRequest(async (req, res) => {
   const startDate = new Date(req.body.data.startDate);
   const endDate = new Date(req.body.data.endDate);
@@ -507,63 +207,373 @@ exports.dudeGetStatsInPeriod = functions.https.onRequest(async (req, res) => {
 });
 
 
-exports.callStatsInPeriod = functions.https.onCall((data, context) => {
-  var stats = [];
-  const startDate = new Date(data.startDate);
-  const endDate = new Date(data.endDate);
+/**
+ * Trashed Code that might be valuable at some point
+ *
+ */
+
+ // exports.callBetterStatsInPeriod = functions.https.onCall((data, context) => {
+//   const startDate = new Date(data.startDate);
+//   const endDate = new Date(data.endDate);
+//   //example has fields for types, and names
+//   let categorizedStats = {};
+
+//   return db.collection('allStats')
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get()
+//     .then(function (querySnapshot) {
+//       querySnapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+
+//         if (doc.data().isPositive) { //stat is positive
+//           //add it to the postive part
+//           return ['poop!'];
+//           // categorizedStats.allStats.isPositive = [];
+//           // categorizedStats.allStats.isPositive.push(newelement);
+//           // //add it to the player
+//           // categorizedStats[doc.data().playerName].isPositive = [];
+//           // categorizedStats[doc.data().playerName].isPositive.push(newelement);
+//           // //add it to the category
+//           // categorizedStats[doc.data().statName].isPositive = [];
+//           // categorizedStats[doc.data().statName].isPositive.push(newelement);
+//         } else { //stat is negative
+//           return ['false!'];
+//           //add it to the postive part
+//           // categorizedStats.allStats.isNegative = [];
+//           // categorizedStats.allStats.isNegative.push(newelement);
+//           // //add it to the player
+//           // categorizedStats[doc.data().playerName].isNegative = [];
+//           // categorizedStats[doc.data().playerName].isNegative.push(newelement);
+//           // //add it to the category
+//           // categorizedStats[doc.data().statName].isNegative = [];
+//           // categorizedStats[doc.data().statName].isNegative.push(newelement);
+//         }
+//       });
+//       return categorizedStats;
+//     })
+//     .catch(function (error) {
+//       console.error("Error adding document: ", error);
+//     })
+
+// });
+
+// exports.callBetterStatsInPeriod = functions.https.onCall((data, context) => {
+//   var stats = {
+//     allPositiveStats: [],
+//     allNegativeStats: [],
+//   };
+//   const startDate = new Date(data.startDate);
+//   const endDate = new Date(data.endDate);
+
+//   result = {
+//     allPositiveStats: [],
+//     allNegativeStats: [],
+//     playerOne: {
+//       name: '',
+//       positives: [],
+//       negatives: []
+//     },
+//     playerTwo: {
+//       name: '',
+//       positives: [],
+//       negatives: []
+//     }
+//   }
+
+//   return db.collection('allStats')
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get()
+//     .then(function (querySnapshot) {
+//       let playerName = doc.data().playerName;
+//       let playerID = doc.data().playerName;
+//       querySnapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         if (doc.data().isPositive) {
+//           stats.allPositiveStats.push(newelement);
+
+//           if (stats.hasOwnProperty(playerID)) {
+//             stats[`${playerID}`].positiveStats.push(newelement);
+//           } else { // if it doesn't exist
+//             stats[`${playerID}`] = {
+//               name: playerName,
+//               positiveStats: [newelement],
+//               negativeStats: [],
+//             }
+//           }
+//         } else {
+//           stats.allNegativeStats.push(newelement);
+
+//           if (stats.hasOwnProperty(playerID)) {
+//             stats[`${playerID}`].negativeStats.push(newelement);
+//           } else { // if it doesn't exist
+//             stats[`${playerID}`] = {
+//               name: playerName,
+//               positiveStats: [],
+//               negativeStats: [newelement],
+//             }
+//           }
+//         }
+
+//         // if (doc.data().isPositive) { //stat is positive
+//         //   //add it to the postive part
+//         //   return ['poop!'];
+//         //   // categorizedStats.allStats.isPositive = [];
+//         //   // categorizedStats.allStats.isPositive.push(newelement);
+//         //   // //add it to the player
+//         //   // categorizedStats[doc.data().playerName].isPositive = [];
+//         //   // categorizedStats[doc.data().playerName].isPositive.push(newelement);
+//         //   // //add it to the category
+//         //   // categorizedStats[doc.data().statName].isPositive = [];
+//         //   // categorizedStats[doc.data().statName].isPositive.push(newelement);
+//         // } else { //stat is negative
+//         //   return ['false!'];
+//         //   //add it to the postive part
+//         //   // categorizedStats.allStats.isNegative = [];
+//         //   // categorizedStats.allStats.isNegative.push(newelement);
+//         //   // //add it to the player
+//         //   // categorizedStats[doc.data().playerName].isNegative = [];
+//         //   // categorizedStats[doc.data().playerName].isNegative.push(newelement);
+//         //   // //add it to the category
+//         //   // categorizedStats[doc.data().statName].isNegative = [];
+//         //   // categorizedStats[doc.data().statName].isNegative.push(newelement);
+//         // }
+
+//         //stats = stats.concat(newelement);
+//       });
+//       return stats;
+//     })
+//     .catch(function (error) {
+//       console.error("Error adding document: ", error);
+//     });
+// });
+
+// exports.callAllStatsForPlayer = functions.https.onCall((data, context) => {
+//   var stats = [];
+//   const playerName = data.playerName;
+//   //example has fields for types, and names
+//   return db.collection('allStats').where('playerName', '==', playerName).get()
+//     .then(function (querySnapshot) {
+//       querySnapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         stats = stats.concat(newelement);
+//       });
+//       return stats;
+//     })
+//     .catch(function (error) {
+//       console.error("Error adding document: ", error);
+//     })
+
+// });
+
+//make an onrequest so we can test this baby out!
+
+ // /**
+//  * Delete stat with ID
+//  */
+// exports.deleteStatByID = functions.https.onRequest((req, res) => {
+//   const ID = req.query.statID;
+//   console.log('wubba lubba dub dub', parseFloat(605.578884363013));
+
+//   db.collection("allStats")
+//     .where("statID", "==", parseFloat(ID))
+//     .get().then(snapshot => {
+//       console.log('poop');
+//       snapshot.forEach(doc => {
+//         doc.ref.delete();
+//       });
+//       res.send('deleted!');
+//       return "";
+//     }).catch(reason => {
+//       res.send(reason)
+//     });
+// });
+
+// /**
+//  * Delete Stats Within Time Period
+//  */
+// exports.deleteStatsInPeriod = functions.https.onRequest((req, res) => {
+//   const startDate = new Date(req.query.startDate);
+//   const endDate = new Date(req.query.endDate);
+
+//   db.collection("allStats")
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get().then(snapshot => {
+//       snapshot.forEach(doc => {
+//         doc.ref.delete();
+//       });
+//       res.send('deleted');
+//       return "";
+//     }).catch(reason => {
+//       res.send(reason)
+//     });
+// });
 
 
-  return db.collection('allStats')
-    .where('createdAt', '>', startDate)
-    .where('createdAt', '<', endDate)
-    .get()
-    .then(function (querySnapshot) {
-      querySnapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": doc.data().playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        stats = stats.concat(newelement);
-      });
-      return stats;
-    })
-    .catch(function (error) {
-      console.error("Error adding document: ", error);
-    });
-});
+// /**
+//  * Get all of the stats for a player
+//  */
+// exports.getAllStatsForPlayer = functions.https.onRequest((req, res) => {
+//   var stats = [];
+//   db.collection("allStats").where("playerName", "==", req.query.playerName).get().then(snapshot => {
+//     snapshot.forEach(doc => {
+//       var newelement = {
+//         "id": doc.id,
+//         "createdAt": doc.data().createdAt,
+//         "isPositive": doc.data().isPositive,
+//         "playerName": doc.data().playerName,
+//         "statID": doc.data().statID,
+//         "statName": doc.data().statName,
+//       }
+//       stats = stats.concat(newelement);
+//     });
+//     res.send(stats)
+//     return "";
+//   }).catch(reason => {
+//     res.send(reason)
+//   })
+// });
 
 
-exports.callStatsInDay = functions.https.onCall((data, context) => {
-  var stats = [];
-  const startDate = new Date(data.startDate);
-  const endDate = new Date(startDate.getTime() + (24 * 60 * 60 * 1000));
+// /**
+//  * Team stats in time period
+//  */
+// exports.getStatsInPeriod = functions.https.onRequest((req, res) => {
+//   const startDate = new Date(req.query.startDate);
+//   const endDate = new Date(req.query.endDate);
+//   var stats = [];
+//   db.collection("allStats")
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get().then(snapshot => {
+//       snapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         stats = stats.concat(newelement);
+//       });
+//       res.send(stats)
+//       return "";
+//     }).catch(reason => {
+//       res.send(reason)
+//     })
+// });
 
-  return db.collection('allStats')
-    .where('createdAt', '>', startDate)
-    .where('createdAt', '<', endDate)
-    .get()
-    .then(function (querySnapshot) {
-      querySnapshot.forEach(doc => {
-        var newelement = {
-          "id": doc.id,
-          "createdAt": doc.data().createdAt,
-          "isPositive": doc.data().isPositive,
-          "playerName": doc.data().playerName,
-          "statID": doc.data().statID,
-          "statName": doc.data().statName,
-        }
-        stats = stats.concat(newelement);
-      });
-      return stats;
-    })
-    .catch(function (error) {
-      console.error("Error adding document: ", error);
-    });
-});
+// /**
+//  * Team Stats for Day
+//  */
+// exports.getStatsInDay = functions.https.onRequest((req, res) => {
+//   const startDate = firebase.getTimeStamp(new Date(req.query.day));
+//   const endDate = firebase.getTimeStamp(new Date(startDate.getTime() + (24 * 60 * 60 * 1000)));
+//   var stats = [];
+//   db.collection("allStats")
+//     .where(`created.${seconds}`, '>', startDate.seconds)
+//     .where(`createdAt.${seconds}`, '<', endDate.seconds)
+//     .get().then(snapshot => {
+//       snapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         stats = stats.concat(newelement);
+//       });
+//       res.send(stats)
+//       return "";
+//     }).catch(reason => {
+//       res.send(reason)
+//     })
+// });
+
+
+// exports.callStatsInPeriod = functions.https.onCall((data, context) => {
+//   var stats = [];
+//   const startDate = new Date(data.startDate);
+//   const endDate = new Date(data.endDate);
+
+
+//   return db.collection('allStats')
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get()
+//     .then(function (querySnapshot) {
+//       querySnapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         stats = stats.concat(newelement);
+//       });
+//       return stats;
+//     })
+//     .catch(function (error) {
+//       console.error("Error adding document: ", error);
+//     });
+// });
+
+
+// exports.callStatsInDay = functions.https.onCall((data, context) => {
+//   var stats = [];
+//   const startDate = new Date(data.startDate);
+//   const endDate = new Date(startDate.getTime() + (24 * 60 * 60 * 1000));
+
+//   return db.collection('allStats')
+//     .where('createdAt', '>', startDate)
+//     .where('createdAt', '<', endDate)
+//     .get()
+//     .then(function (querySnapshot) {
+//       querySnapshot.forEach(doc => {
+//         var newelement = {
+//           "id": doc.id,
+//           "createdAt": doc.data().createdAt,
+//           "isPositive": doc.data().isPositive,
+//           "playerName": doc.data().playerName,
+//           "statID": doc.data().statID,
+//           "statName": doc.data().statName,
+//         }
+//         stats = stats.concat(newelement);
+//       });
+//       return stats;
+//     })
+//     .catch(function (error) {
+//       console.error("Error adding document: ", error);
+//     });
+// });
 
 
 // These functions get called from within the app
